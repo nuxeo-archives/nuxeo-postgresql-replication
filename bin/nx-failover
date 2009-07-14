@@ -1,0 +1,391 @@
+#!/bin/bash
+#
+# Nuxeo PostgreSQL replication script
+#
+# (C) Copyright 2009 Nuxeo SA (http://nuxeo.com/) and contributors.
+#
+# All rights reserved. This program and the accompanying materials
+# are made available under the terms of the GNU Lesser General Public License
+# (LGPL) version 2.1 which accompanies this distribution, and is available at
+# http://www.gnu.org/licenses/lgpl.html
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Lesser General Public License for more details.
+#
+# Contributors:
+#   Julien Carsique
+#
+# $Id$
+
+# ==================================================
+# Default
+#
+CONF_FILE=nx-failover.conf
+
+# specific sed syntax on Mac OS
+if [[ $OSTYPE == "darwin"* ]]; then
+  SED='sed -i "" '
+else
+  SED='sed -i '
+fi
+
+# ==================================================
+# Commands that don't need a configuration file
+#
+handle_placeless_commands() {
+    case $1 in
+        init|initialize)
+            shift
+            init $@
+            exit 0
+            ;;
+
+        debug|-d|--debug)
+            set -x; shift
+            handle_placeless_commands $@
+            ;;
+
+        version|-version|--version|-v)
+            shift
+            echo "nx-failover version $VERSION"
+            exit 0
+            ;;
+
+        help|-h|--help|?)
+            cat $NXR_HOME/README.txt
+            exit 1
+            ;;
+    esac
+}
+handle_placeless_commands $@
+
+# ==================================================
+# Target: init
+#
+init() {
+    if [ ! -z $1 ]; then
+        DEST=$1
+        mkdir -p $DEST || exit 1
+    else
+        DEST="."
+    fi
+    if [ -r $DEST/$CONF_FILE ]; then
+        echo "### WARN: $DEST already initialized. Check the file $DEST/$CONF_FILE" >& 2
+        exit 2
+    fi
+    if [ -r ~/.nx-failover.conf ]; then
+        cp ~/.nx-failover.conf $DEST/$CONF_FILE || exit 2
+    else
+        cp $NXR_HOME/bin/nx-failover.conf.sample $DEST/$CONF_FILE || exit 2
+    fi
+    echo "### $DEST initialized, you have to configure the file $DEST/$CONF_FILE"
+}
+
+# ==================================================
+# Load configuration file or die
+#
+  if  [ ! -r $CONF_FILE ]; then
+      echo "### ERROR: Missing configuration file. You need to run '`basename $0` init' first."
+      exit 2
+  fi
+  source $CONF_FILE
+  WORK_DIR=$(pwd -P)
+  NXDATA=$NXDATA_BASE/data
+  NXDATA_DIRS="data tmp log work"
+  PGARCHIVE_CONF=postgresql.conf
+  PGRESTORE_CONF=recovery.conf
+  PGDATA_OUTGOING=$PGDATA_BASE/outgoing
+  PGDATA_INCOMING=$PGDATA_BASE/incoming
+  PGARCHIVE_COMMAND="$NXR_HOME/bin/pg_commands/archive_command.sh $PGDATA $PGDATA_OUTGOING $PGDATA_INCOMING $NXDATA $NXDATA $NXDATA_TOSYNC $SLAVE %p %f $COMMON_USER"
+  PGARCHIVE_COMMAND_HOT="$NXR_HOME/bin/pg_commands/archive_command_hot.sh $PGDATA_BASE $PGDATA $PGDATA_OUTGOING %p %f"
+  PGRESTORE_COMMAND="$NXR_HOME/bin/pg_commands/restore_command.sh $PG_STANDBY $PGDATA_BASE $PGDATA $PGDATA_INCOMING %p %f %r"
+  SUNXUSER="sudo su - $COMMON_USER -c"
+  SUPGUSER="sudo su - $COMMON_USER -c"
+  SUPGROOT="sudo su - $PGROOT -c"
+
+# ==================================================
+# Utils
+#
+display_conf() {
+    echo "### Nuxeo PostgreSQL replication configuration"
+    echo "  nx-failover:"
+    echo "    working directory:  $WORK_DIR"
+    echo "    configuration file: $CONF_FILE"
+    echo "  Starting at: `date`"
+    echo
+}
+
+
+# ==================================================
+# Target: setup
+#
+setup() {
+  # setup convenient symlinks
+  sudo ln -s $PGDATA $PGDATA_BASE/data
+  sudo ln -s $NX_HOME/server/default/data $NX_DATA
+  # setup ownership
+  # sudo chown -R postgres:postgres ...
+  # sudo chown -R nuxeo:nuxeo ...
+  
+  check
+}
+
+# ==================================================
+# Target: start-master
+#
+start-master() {
+  $PG_SERVICE stop || true
+  $SUPGROOT sh <<EOF
+    # stop restoring if it was a slave server
+    rm -f $PGDATA/$PGRESTORE_CONF 2>/dev/null
+    if [ ! -e $WORK_DIR/$PGARCHIVE_CONF.bak ]; then
+      cp $PGCONF/$PGARCHIVE_CONF $WORK_DIR/$PGARCHIVE_CONF.bak
+    fi
+    cp -f $WORK_DIR/$PGARCHIVE_CONF.bak $PGCONF/$PGARCHIVE_CONF
+    echo "## archiving" >> $PGCONF/$PGARCHIVE_CONF
+    # the archive_mode option is from PostgreSQL 8.3
+    echo $PGARCHIVE_MODE >> $PGCONF/$PGARCHIVE_CONF
+    echo "archive_command = '$PGARCHIVE_COMMAND'" >> $PGCONF/$PGARCHIVE_CONF
+    echo $PGARCHIVE_TIMEOUT >> $PGCONF/$PGARCHIVE_CONF
+EOF
+  $PG_SERVICE start ||Êexit 1
+  
+}
+
+# ==================================================
+# Target: backup
+#
+backup() {
+  [ ! -z $PGDATA ] && [ ! -z $PGDATA_BASE ] && [ ! -z $NXDATA_BASE ] || exit 2
+  $PG_SERVICE stop || true
+  $SUPGROOT sh <<EOF
+    # stop restoring if it was a slave server
+    rm -f $PGDATA/$PGRESTORE_CONF 2>/dev/null
+    if [ ! -e $WORK_DIR/$PGARCHIVE_CONF.bak ]; then
+      cp $PGCONF/$PGARCHIVE_CONF $WORK_DIR/$PGARCHIVE_CONF.bak
+    fi
+    cp -f $WORK_DIR/$PGARCHIVE_CONF.bak $PGCONF/$PGARCHIVE_CONF
+    echo "## archiving" >> $PGCONF/$PGARCHIVE_CONF
+    # the archive_mode option is from PostgreSQL 8.3
+    echo $PGARCHIVE_MODE >> $PGCONF/$PGARCHIVE_CONF
+    echo "archive_command = '$PGARCHIVE_COMMAND_HOT'" >> $PGCONF/$PGARCHIVE_CONF
+    echo $PGARCHIVE_TIMEOUT >> $PGCONF/$PGARCHIVE_CONF
+EOF
+  $PG_SERVICE start ||Êexit 1
+  DATE=`date +%Y%m%d-%H%M`
+  $SUPGROOT sh <<EOF
+    touch $PGDATA_BASE/backup_in_progress
+#    psql -d$PGDB -c "SELECT pg_start_backup('backup-$DATE');"
+    psql -c "SELECT pg_start_backup('backup-$DATE');"
+    cd `dirname $PGDATA`
+    tar -cf $PGDATA_BASE/backup-$DATE.tar `basename $PGDATA`
+    chmod g+rw $PGDATA_BASE/backup-$DATE.tar
+    chgrp $COMMON_GROUP $PGDATA_BASE/backup-$DATE.tar
+EOF
+  $SUNXUSER sh <<EOF
+    cd $NXDATA
+    tar -rf $PGDATA_BASE/backup-$DATE.tar $NXDATA_TOSYNC
+EOF
+  $SUPGROOT sh <<EOF
+    psql -c "SELECT pg_stop_backup();"
+    sleep 20
+    rm $PGDATA_BASE/backup_in_progress
+    cd $PGDATA_BASE/
+    chmod g+rx -R $PGDATA_OUTGOING
+    tar -rf $PGDATA_BASE/backup-$DATE.tar `basename $PGDATA_OUTGOING`
+    rm -f $PGDATA_OUTGOING/*
+    echo "backup-$DATE.tar" > $PGDATA_BASE/lastbackup
+EOF
+    start-master
+    $SUPGROOT "scp -C $PGDATA_BASE/lastbackup $PGDATA_BASE/backup-$DATE.tar $SLAVE:$PGDATA_BASE/"
+    echo "### INFO: run 'nx-failover restore' on slave" 
+}
+
+# ==================================================
+# Target: restore
+#
+restore() {
+  [ ! -z $PGDATA ] && [ ! -z $PGDATA_BASE ] && [ ! -z $NXDATA_BASE ] || exit 2
+  $PG_SERVICE stop || true
+  DATE=`date +%Y%m%d-%H%M`
+  BACKUP_FILE=$PGDATA_BASE/`cat $PGDATA_BASE/lastbackup`
+  $SUPGROOT sh <<EOF
+    if [ ! -e $WORK_DIR/$PGARCHIVE_CONF.bak ]; then
+      cp $PGCONF/$PGARCHIVE_CONF $WORK_DIR/$PGARCHIVE_CONF.bak
+    fi
+    cd `dirname $PGDATA`
+    mv $PGDATA $PGDATA_BASE/`basename $PGDATA`.backup-$DATE
+    chmod g+rw $BACKUP_FILE
+    tar zxvf $BACKUP_FILE `basename $PGDATA`
+    rm -r $PGDATA/pg_xlog/*
+#    mkdir $PGDATA/pg_xlog/archive_status/
+    cd `dirname $PGDATA_OUTGOING`
+    rm $PGDATA_OUTGOING/*
+    tar -xf $BACKUP_FILE `basename $PGDATA_OUTGOING`
+    mv $PGDATA_OUTGOING/* $PGDATA_INCOMING/
+#    echo "## restoring" > $PGCONF/$PGRESTORE_CONF
+#    echo "restore_command = '$PGRESTORE_COMMAND'" >> $PGCONF/$PGRESTORE_CONF
+#    ln -sf $PGCONF/$PGRESTORE_CONF $PGDATA/
+EOF
+  $SUNXUSER sh <<EOF
+    mkdir $NXDATA_BASE/`basename $NXDATA`.backup-$DATE
+    cd $NXDATA
+    mv $NXDATA_TOSYNC $NXDATA_BASE/`basename $NXDATA`.backup-$DATE/
+    tar -xf $BACKUP_FILE $NXDATA_TOSYNC
+# not needed because database is on localhost
+#    cp $NXDATA_BASE/default.xml $NXDATA_BASE/data/NXRuntime/repos/default/
+EOF
+  $PG_SERVICE start
+  start-slave
+}
+
+# ==================================================
+# Target: start-slave
+#
+start-slave() {
+  $PG_SERVICE stop ||Êtrue
+  $SUPGROOT sh <<EOF
+#    [ -f /mnt/pgdata/data/recovery.conf.bak ] || cp /usr/share/pgsql/recovery.conf.sample $PGDATA/recovery.conf.bak
+#    if [ ! -e $WORK_DIR/$PGRESTORE_CONF.bak ]; then
+#      echo $WORK_DIR/$PGRESTORE_CONF.bak missing ! Should copy it from a sample one: `locate recovery.conf`
+#      echo "Creating an empty one."
+#      touch $WORK_DIR/$PGRESTORE_CONF.bak
+#    fi
+    # stop archiving if it was a master server
+    cp -f $WORK_DIR/$PGARCHIVE_CONF.bak $PGCONF/$PGARCHIVE_CONF
+#    cp -f $WORK_DIR/$PGRESTORE_CONF.bak $PGCONF/$PGRESTORE_CONF
+    echo "## restoring" > $PGCONF/$PGRESTORE_CONF
+    echo "restore_command = '$PGRESTORE_COMMAND'" >> $PGCONF/$PGRESTORE_CONF
+    ln -sf $PGCONF/$PGRESTORE_CONF $PGDATA/
+EOF
+  $PG_SERVICE start
+}
+
+# ==================================================
+# Target: start-alone
+#
+start-alone() {
+  $PG_SERVICE stop ||Êtrue
+  $SUPGROOT sh <<EOF
+    # stop archiving/restoring if it was a master/slave server
+    cp -f $WORK_DIR/$PGARCHIVE_CONF.bak $PGCONF/$PGARCHIVE_CONF
+    rm -f $PGDATA/$PGRESTORE_CONF 2>/dev/null
+EOF
+  $PG_SERVICE start
+}
+
+# ==================================================
+# Target: switch-to-master
+#
+switch-to-master() {
+  $SUPGROOT "touch /tmp/pgsql.trigger.5442"
+  sleep 20
+  $PG_SERVICE stop
+  # stop restoring
+  $SUPGROOT sh <<EOF
+    rm -f $PGDATA/$PGRESTORE_CONF 2>/dev/null
+    if [ ! -e $WORK_DIR/$PGARCHIVE_CONF.bak ]; then
+      cp $PGCONF/$PGARCHIVE_CONF $WORK_DIR/$PGARCHIVE_CONF.bak
+    fi
+    cp -f $WORK_DIR/$PGARCHIVE_CONF.bak $PGCONF/$PGARCHIVE_CONF
+    rm -f /tmp/pgsql.trigger.5442
+    cp `cat $PGDATA_BASE/lastrestored` $PGDATA/pg_xlog/
+EOF
+  $PG_SERVICE start
+  # remove lock imported from running ex-primary
+  $SUNXUSER "rm -f $NXDATA/NXRuntime/repos/default/.lock 2>/dev/null"
+}
+
+# ==================================================
+# Target: switch-to-slave
+#
+switch-to-slave() {
+  $SUPGROOT "rm -f $PGDATA_OUTGOING/*"
+  start-slave
+}
+
+# ==================================================
+# Target: check
+#
+check() {
+  display_conf
+  . $NXR_HOME/lib/check  || exit 1
+}
+
+# ==================================================
+# Target: backup-standby
+#
+backup-standby() {
+  $SUPGROOT sh <<EOF
+    echo "Waiting for the last uploaded file to be fully restored..."
+    mkdir $PGDATA_BASE/restored/ 2>/dev/null
+    while true; do
+      if [ ! -f `cat $PGDATA_BASE/nexttorestore` ]; then
+        ( cd $PGDATA_INCOMING/
+          mv * $PGDATA_BASE/restored/
+          cd $PGDATA_BASE/restored/
+          export DATE=`date +%Y%m%d-%H%M`
+          LASTRESTORED=`cat $PGDATA_BASE/lastrestored| basename`
+          tar --remove-files -zcvf $PGDATA_BASE/restored-$DATE-$LASTRESTORED.tgz *
+          echo "Backuped and removed files until including $LASTRESTORED into $PGDATA_BASE/restored-$DATE-$LASTRESTORED.tgz"
+          echo "Store with `cat $PGDATA_BASE/lastbackup` to have consistent data."
+          return 0
+        )
+      fi
+      echo "Restoring `cat $PGDATA_BASE/nexttorestore` in progress, waiting..."
+      sleep 10 || return 1 # Ctrl-C interrupt
+    done
+EOF
+}
+
+# ==================================================
+# main
+#
+main() {
+    case $1 in
+        check)
+            check
+            ;;
+        setup)
+            setup
+            ;;
+        start-master)
+            start-master
+            ;;
+        start-slave)
+            start-slave
+            ;;
+        start-alone)
+            start-alone
+            ;;
+        backup)
+            backup
+            ;;
+        backup-standby)
+            backup-standby
+            ;;
+        restore)
+            restore
+            ;;
+        switch-to-master)
+            switch-to-master
+            ;;
+        switch-to-slave)
+            switch-to-slave
+            ;;
+        debug|-d|--debug)
+            set -x; shift
+            main $@
+            ;;
+        *)
+            echo "### ERROR: invalid options, try nx-failover help."
+            exit 1
+        ;;
+    esac
+}
+
+main $@
+echo "### nx-failover: task completed at `date`."
+
