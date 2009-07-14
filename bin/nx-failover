@@ -36,9 +36,9 @@ fi
 #
 handle_placeless_commands() {
     case $1 in
-        init|initialize)
+        conf|configure)
             shift
-            init $@
+            conf $@
             exit 0
             ;;
 
