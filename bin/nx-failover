@@ -62,9 +62,9 @@ handle_placeless_commands() {
 handle_placeless_commands $@
 
 # ==================================================
-# Target: init
+# Target: conf
 #
-init() {
+conf() {
     if [ ! -z $1 ]; then
         DEST=$1
         mkdir -p $DEST || exit 1
@@ -87,7 +87,7 @@ init() {
 # Load configuration file or die
 #
   if  [ ! -r $CONF_FILE ]; then
-      echo "### ERROR: Missing configuration file. You need to run '`basename $0` init' first."
+      echo "### ERROR: Missing configuration file. You need to run '`basename $0` conf' first."
       exit 2
   fi
   source $CONF_FILE
@@ -380,12 +380,12 @@ main() {
             main $@
             ;;
         *)
-            echo "### ERROR: invalid options, try nx-failover help."
+            echo "### ERROR: invalid options, try '`basename $0` help'."
             exit 1
         ;;
     esac
 }
 
 main $@
-echo "### nx-failover: task completed at `date`."
+echo "### `basename $0`: task completed at `date`."
 

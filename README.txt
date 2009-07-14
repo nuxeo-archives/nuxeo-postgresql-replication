@@ -90,8 +90,9 @@ version, -version, --version, -v
 help, -h, --help, ?
     This help.
 
-init
-    Initialize the current directory as replication managing directory.
+conf
+    Initialize the current directory as replication managing directory, creating sample configuration
+    files you have to fill.
 
 setup
     Create and setup needed directories and ownerships
