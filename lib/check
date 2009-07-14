@@ -25,7 +25,7 @@ if [ ! -d $PGDATA ]; then
     error=1
     echo "### ERROR: PostgreSQL DATA $PGDATA is not initialized"
     exit 1
-
+fi
 if [ ! -z $error ]; then
     echo "### ERROR: you need to fix the previous errors."
     exit 1

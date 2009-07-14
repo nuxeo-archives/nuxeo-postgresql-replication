@@ -32,13 +32,35 @@ else
 fi
 
 # ==================================================
+# Target: init
+#
+init() {
+    if [ ! -z $1 ]; then
+        DEST=$1
+        mkdir -p $DEST || exit 1
+    else
+        DEST="."
+    fi
+    if [ -r $DEST/$CONF_FILE ]; then
+        echo "### WARN: $DEST already initialized. Check the file $DEST/$CONF_FILE" >& 2
+        exit 2
+    fi
+    if [ -r ~/.nx-failover.conf ]; then
+        cp ~/.nx-failover.conf $DEST/$CONF_FILE || exit 2
+    else
+        cp $NXR_HOME/bin/nx-failover.conf.sample $DEST/$CONF_FILE || exit 2
+    fi
+    echo "### $DEST initialized, you have to configure the file $DEST/$CONF_FILE"
+}
+
+# ==================================================
 # Commands that don't need a configuration file
 #
 handle_placeless_commands() {
     case $1 in
-        conf|configure)
+        init|initialize)
             shift
-            conf $@
+            init $@
             exit 0
             ;;
 
@@ -62,32 +84,10 @@ handle_placeless_commands() {
 handle_placeless_commands $@
 
 # ==================================================
-# Target: conf
-#
-conf() {
-    if [ ! -z $1 ]; then
-        DEST=$1
-        mkdir -p $DEST || exit 1
-    else
-        DEST="."
-    fi
-    if [ -r $DEST/$CONF_FILE ]; then
-        echo "### WARN: $DEST already initialized. Check the file $DEST/$CONF_FILE" >& 2
-        exit 2
-    fi
-    if [ -r ~/.nx-failover.conf ]; then
-        cp ~/.nx-failover.conf $DEST/$CONF_FILE || exit 2
-    else
-        cp $NXR_HOME/bin/nx-failover.conf.sample $DEST/$CONF_FILE || exit 2
-    fi
-    echo "### $DEST initialized, you have to configure the file $DEST/$CONF_FILE"
-}
-
-# ==================================================
 # Load configuration file or die
 #
   if  [ ! -r $CONF_FILE ]; then
-      echo "### ERROR: Missing configuration file. You need to run '`basename $0` conf' first."
+      echo "### ERROR: Missing configuration file. You need to run '`basename $0` init' first."
       exit 2
   fi
   source $CONF_FILE
@@ -113,6 +113,23 @@ display_conf() {
     echo "  nx-failover:"
     echo "    working directory:  $WORK_DIR"
     echo "    configuration file: $CONF_FILE"
+    echo "    log file: $LOG_FILE"
+    echo "    user: $COMMON_USER"
+    echo
+    echo "    Nuxeo directory: $NX_HOME"
+    echo "    Nuxeo data base directory: $NXDATA_BASE"
+    echo "    Nuxeo directories to synchronize: $NXDATA_TOSYNC"
+    echo "    Nuxeo directories to synchronize: $NXDATA_TOSYNC"
+    echo
+    echo "    PostgreSQL database: $PG_DB"
+    echo "    PostgreSQL data directory: $PGDATA"
+    echo "    PostgreSQL conf directory: $PGCONF"
+    echo "    PostgreSQL data base directory: $PGDATA_BASE"
+    echo "    pg_standby executable: $PG_STANDBY"
+    echo "    archive mode: $PGARCHIVE_MODE"
+    echo "    archive timeout: $PGARCHIVE_TIMEOUT"
+    echo
+    echo "    Slave: $SLAVE"
     echo "  Starting at: `date`"
     echo
 }

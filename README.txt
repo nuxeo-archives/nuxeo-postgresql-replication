@@ -90,7 +90,7 @@ version, -version, --version, -v
 help, -h, --help, ?
     This help.
 
-conf
+init
     Initialize the current directory as replication managing directory, creating sample configuration
     files you have to fill.
 
