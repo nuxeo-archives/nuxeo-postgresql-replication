@@ -98,9 +98,9 @@ handle_placeless_commands $@
   PGRESTORE_CONF=recovery.conf
   PGDATA_OUTGOING=$PGDATA_BASE/outgoing
   PGDATA_INCOMING=$PGDATA_BASE/incoming
-  PGARCHIVE_COMMAND="$NXR_HOME/bin/pg_commands/archive_command.sh $PGDATA $PGDATA_OUTGOING $PGDATA_INCOMING $NXDATA $NXDATA $NXDATA_TOSYNC $SLAVE %p %f $COMMON_USER"
-  PGARCHIVE_COMMAND_HOT="$NXR_HOME/bin/pg_commands/archive_command_hot.sh $PGDATA_BASE $PGDATA $PGDATA_OUTGOING %p %f"
-  PGRESTORE_COMMAND="$NXR_HOME/bin/pg_commands/restore_command.sh $PG_STANDBY $PGDATA_BASE $PGDATA $PGDATA_INCOMING %p %f %r"
+  PGARCHIVE_COMMAND="$NXR_HOME/bin/pg_commands/archive_command.sh $PGDATA $PGDATA_OUTGOING $PGDATA_INCOMING $NXDATA $NXDATA $NXDATA_TOSYNC $SLAVE $LOG_FILE %p %f $COMMON_USER"
+  PGARCHIVE_COMMAND_HOT="$NXR_HOME/bin/pg_commands/archive_command_hot.sh $PGDATA_BASE $PGDATA $PGDATA_OUTGOING $LOG_FILE %p %f"
+  PGRESTORE_COMMAND="$NXR_HOME/bin/pg_commands/restore_command.sh $PG_STANDBY $PGDATA_BASE $PGDATA $PGDATA_INCOMING $LOG_FILE %p %f %r"
   SUNXUSER="sudo su - $COMMON_USER -c"
   SUPGUSER="sudo su - $COMMON_USER -c"
   SUPGROOT="sudo su - $PGROOT -c"

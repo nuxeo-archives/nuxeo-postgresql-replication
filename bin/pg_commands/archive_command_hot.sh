@@ -22,10 +22,12 @@
 PGDATA_BASE=$1
 PGDATA=$2
 PGDATA_OUTGOING=$3
-P=$4
-F=$5
+LOG_FILE=$4
+P=$5
+F=$6
 if [ -f $PGDATA_OUTGOING/$F ]; then
   echo "### ERROR: $PGDATA_OUTGOING/$F already exists ! exiting archive command" >&2
   exit 1
 fi
 test ! -f $PGDATA_BASE/backup_in_progress || cp -i $PGDATA/$P $PGDATA_OUTGOING/$F < /dev/null
+echo `date`: hot archive done. >>$LOG_FILE

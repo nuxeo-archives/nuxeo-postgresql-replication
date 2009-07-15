@@ -23,10 +23,11 @@ PG_STANDBY=$1
 PGDATA_BASE=$2
 PGDATA=$3
 PGDATA_INCOMING=$4
-P=$5
-F=$6
-R=$7
+LOG_FILE=$5
+P=$6
+F=$7
+R=$8
 echo "$PGDATA_INCOMING/$F" > $PGDATA_BASE/nexttorestore
-#$PG_STANDBY -l -d -s 60 -t /tmp/pgsql.trigger.5442 $PGDATA_INCOMING $F $PGDATA/$P $R 2>>$PGDATA_BASE/standby.log
-$PG_STANDBY -l -d -s 60 -t /tmp/pgsql.trigger.5442 $PGDATA_INCOMING $F $P $R 2>>$PGDATA_BASE/standby.log
+#$PG_STANDBY -l -d -s 60 -t /tmp/pgsql.trigger.5442 $PGDATA_INCOMING $F $PGDATA/$P $R 2>>$LOG_FILE 2>&1
+$PG_STANDBY -l -d -s 60 -t /tmp/pgsql.trigger.5442 $PGDATA_INCOMING $F $P $R >>$LOG_FILE 2>&1
 echo "$PGDATA_BASE/incoming/$F" > $PGDATA_BASE/lastrestored

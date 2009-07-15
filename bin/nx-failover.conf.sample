@@ -8,15 +8,15 @@ NX_SERVICE="sudo /etc/init.d/nuxeo"
 NXDATA_BASE=/mnt/nxdata
 NXDATA_TOSYNC="NXRuntime"
 
-LOG_FILE=master.log
-#LOG_FILE=slave.log
-
 PGROOT='postgres'
 PG_SERVICE="sudo /etc/init.d/postgresql"
 PG_DB=cws
 PGDATA=/var/lib/postgresql/8.3/main
 PGCONF=/etc/postgresql/8.3/main/
 PGDATA_BASE=/mnt/pgdata
+
+LOG_FILE=$PGDATA_BASE/master.log
+#LOG_FILE=$PGDATA_BASE/slave.log
 
 PG_STANDBY=/usr/local/nx-failover/bin/pg_standby
 #PG_STANDBY=/usr/local/nx-failover/lib/pg_standby-8.2.7_64
