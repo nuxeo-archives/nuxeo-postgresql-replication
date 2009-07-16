@@ -215,9 +215,9 @@ EOF
     rm -f $PGDATA_OUTGOING/*
     echo "backup-$DATE.tar" > $PGDATA_BASE/lastbackup
 EOF
-    start-master
     $SUPGROOT "scp -C $PGDATA_BASE/lastbackup $PGDATA_BASE/backup-$DATE.tar $SLAVE:$PGDATA_BASE/"
     echo "### INFO: run 'nx-failover restore' on slave" 
+    start-master
 }
 
 # ==================================================
@@ -289,6 +289,7 @@ start-alone() {
     # stop archiving/restoring if it was a master/slave server
     cp -f $WORK_DIR/$PGARCHIVE_CONF.bak $PGCONF/$PGARCHIVE_CONF
     rm -f $PGDATA/$PGRESTORE_CONF 2>/dev/null
+    rm -f /tmp/pgsql.trigger.5442
 EOF
   $PG_SERVICE start
 }
@@ -301,18 +302,11 @@ switch-to-master() {
   sleep 20
   $PG_SERVICE stop
   # stop restoring
-  $SUPGROOT sh <<EOF
-    rm -f $PGDATA/$PGRESTORE_CONF 2>/dev/null
-    if [ ! -e $WORK_DIR/$PGARCHIVE_CONF.bak ]; then
-      cp $PGCONF/$PGARCHIVE_CONF $WORK_DIR/$PGARCHIVE_CONF.bak
-    fi
-    cp -f $WORK_DIR/$PGARCHIVE_CONF.bak $PGCONF/$PGARCHIVE_CONF
-    rm -f /tmp/pgsql.trigger.5442
-    cp `cat $PGDATA_BASE/lastrestored` $PGDATA/pg_xlog/
-EOF
-  $PG_SERVICE start
+  $SUPGROOT "cp `cat $PGDATA_BASE/lastrestored` $PGDATA/pg_xlog/"
+  start-alone
   # remove lock imported from running ex-primary
   $SUNXUSER "rm -f $NXDATA/NXRuntime/repos/default/.lock 2>/dev/null"
+  echo "### INFO: run 'nx-failover start-master' when a slave is ready" 
 }
 
 # ==================================================
@@ -363,7 +357,7 @@ EOF
 main() {
     case $1 in
         check)
-            check
+            Check directories, ownerships, ...
             ;;
         setup)
             setup
