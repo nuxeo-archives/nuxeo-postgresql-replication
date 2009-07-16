@@ -143,8 +143,8 @@ setup() {
   sudo ln -s $PGDATA $PGDATA_BASE/data
   sudo ln -s $NX_HOME/server/default/data $NX_DATA
   # setup ownership
-  # sudo chown -R postgres:postgres ...
-  # sudo chown -R nuxeo:nuxeo ...
+  sudo chown -R postgres:postgres $PGDATA_BASE
+  sudo chown -R nuxeo:nuxeo $NXDATA_BASE
   
   check
 }
@@ -275,7 +275,7 @@ start-slave() {
 #    cp -f $WORK_DIR/$PGRESTORE_CONF.bak $PGCONF/$PGRESTORE_CONF
     echo "## restoring" > $PGCONF/$PGRESTORE_CONF
     echo "restore_command = '$PGRESTORE_COMMAND'" >> $PGCONF/$PGRESTORE_CONF
-    ln -sf $PGCONF/$PGRESTORE_CONF $PGDATA/
+     [ $PGCONF != $PGDATA ] && ln -sf $PGCONF/$PGRESTORE_CONF $PGDATA/
 EOF
   $PG_SERVICE start
 }
@@ -357,7 +357,7 @@ EOF
 main() {
     case $1 in
         check)
-            Check directories, ownerships, ...
+            check
             ;;
         setup)
             setup

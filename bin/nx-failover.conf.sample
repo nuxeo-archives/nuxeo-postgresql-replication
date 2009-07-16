@@ -1,8 +1,6 @@
 # Common user for server filesystem and PostgreSQL database
 COMMON_USER='nuxeo'
 
-#JAVA_HOME="/usr/lib/jvm/java-1.5.0-sun"
-#PATH=$PATH:$JAVA_HOME/bin
 NX_HOME=/opt/nuxeo
 NX_SERVICE="sudo /etc/init.d/nuxeo"
 NXDATA_BASE=/mnt/nxdata
@@ -10,7 +8,7 @@ NXDATA_TOSYNC="NXRuntime"
 
 PGROOT='postgres'
 PG_SERVICE="sudo /etc/init.d/postgresql"
-PSQL=/opt/PostgreSQL/8.3/bin/psql
+PSQL=psql
 PG_DB=cws
 PGDATA=/var/lib/postgresql/8.3/main
 PGCONF=/etc/postgresql/8.3/main/
@@ -21,7 +19,7 @@ LOG_FILE=$PGDATA_BASE/master.log
 
 PG_STANDBY=/usr/local/nx-failover/bin/pg_standby
 #PG_STANDBY=/usr/local/nx-failover/lib/pg_standby-8.2.7_64
-# archive mode is used from PostgreSQL version 8.3
+# archive mode is used since PostgreSQL version 8.3
 PGARCHIVE_MODE="archive_mode = on"
 #PGARCHIVE_MODE=""
 PGARCHIVE_TIMEOUT="archive_timeout = 600"
