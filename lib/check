@@ -32,10 +32,13 @@ fi
 ssh -q -o "BatchMode=yes" $COMMON_USER@$SLAVE exit || \
   (error=1 && echo "### ERROR: cannot connect on $SLAVE as $COMMON_USER")
 $SUPGROOT -c "ssh -q -o \"BatchMode=yes\" $COMMON_USER@$SLAVE exit" || \
-  (error=1 && echo "### ERROR: cannot connect on $SLAVE as $COMMON_USER")
+  (error=1 && echo "### ERROR: $PGROOT cannot connect on $SLAVE as $COMMON_USER")
 $SUPGROOT -c "ssh -q -o \"BatchMode=yes\" $PGROOT@$SLAVE exit" || \
-  (error=1 && echo "### ERROR: cannot connect on $SLAVE as $PGROOT")
-
+  (error=1 && echo "### ERROR: $PGROOT cannot connect on $SLAVE as $PGROOT")
+$SUNXUSER -c "touch $NXDATA/check.test" && \
+$SUPGROOT -c "cp $NXDATA/check.test $PGDATA_BASE/check.test" || \
+   (error=1 && echo "### ERROR: $PGROOT cannot copy files in $NXDATA created by $COMMON_USER")
+$SUNXUSER -c "rm $NXDATA/check.test" && $SUPGROOT -c "rm $PGDATA_BASE/check.test"
 # TODO other points to check...
 
 if [ ! -z $error ]; then

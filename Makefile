@@ -26,6 +26,7 @@ install:
 	install -m 755 ./lib/pg_standby-8.2.6_32 $(NXR_HOME)/lib
 	install -m 755 ./lib/pg_standby-8.2.7_64 $(NXR_HOME)/lib
 	install -m 755 ./lib/check $(NXR_HOME)/lib
+	install -m 755 ./lib/setup $(NXR_HOME)/lib
 	@./post-install.sh $(PREFIX) $(NXR_HOME) $(VERSION)
 
 uninstall:

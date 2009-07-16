@@ -1,0 +1,29 @@
+#!/bin/bash
+#
+# Preparing server, creating directories, setting permissions
+#
+# (C) Copyright 2009 Nuxeo SA (http://nuxeo.com/) and contributors.
+#
+# All rights reserved. This program and the accompanying materials
+# are made available under the terms of the GNU Lesser General Public License
+# (LGPL) version 2.1 which accompanies this distribution, and is available at
+# http://www.gnu.org/licenses/lgpl.html
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Lesser General Public License for more details.
+#
+# Contributors:
+#   Julien Carsique
+#
+# $Id$
+
+# create directories
+sudo mkdir -p -m770 $PGDATA_BASE $PGDATA_OUTGOING $PGDATA_INCOMING $NXDATA_BASE 
+# setup convenient symlinks
+sudo ln -s $PGDATA $PGDATA_BASE/data
+sudo ln -s $NX_HOME/server/default/data $NXDATA
+# setup ownership
+sudo chown -R $PGROOT:$PGROOT $PGDATA_BASE
+sudo chown -R $COMMON_USER:$COMMON_USER $NXDATA_BASE
