@@ -194,8 +194,8 @@ EOF
   DATE=`date +%Y%m%d-%H%M`
   $SUPGROOT sh <<EOF
     touch $PGDATA_BASE/backup_in_progress
-#    psql -d$PGDB -c "SELECT pg_start_backup('backup-$DATE');"
-    psql -c "SELECT pg_start_backup('backup-$DATE');"
+#    $PSQL -d$PGDB -c "SELECT pg_start_backup('backup-$DATE');"
+    $PSQL -c "SELECT pg_start_backup('backup-$DATE');"
     cd `dirname $PGDATA`
     tar -cf $PGDATA_BASE/backup-$DATE.tar `basename $PGDATA`
     chmod g+rw $PGDATA_BASE/backup-$DATE.tar
@@ -206,7 +206,7 @@ EOF
     tar -rf $PGDATA_BASE/backup-$DATE.tar $NXDATA_TOSYNC
 EOF
   $SUPGROOT sh <<EOF
-    psql -c "SELECT pg_stop_backup();"
+    $PSQL -c "SELECT pg_stop_backup();"
     sleep 20
     rm $PGDATA_BASE/backup_in_progress
     cd $PGDATA_BASE/

@@ -10,6 +10,7 @@ NXDATA_TOSYNC="NXRuntime"
 
 PGROOT='postgres'
 PG_SERVICE="sudo /etc/init.d/postgresql"
+PSQL=/opt/PostgreSQL/8.3/bin/psql
 PG_DB=cws
 PGDATA=/var/lib/postgresql/8.3/main
 PGCONF=/etc/postgresql/8.3/main/
