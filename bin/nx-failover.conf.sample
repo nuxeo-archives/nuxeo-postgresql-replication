@@ -14,8 +14,7 @@ PGDATA=/var/lib/postgresql/8.3/main
 PGCONF=/etc/postgresql/8.3/main/
 PGDATA_BASE=/mnt/pgdata
 
-LOG_FILE=$PGDATA_BASE/master.log
-#LOG_FILE=$PGDATA_BASE/slave.log
+LOG_FILE=$PGDATA_BASE/nx-failover.log
 
 PG_STANDBY=/usr/local/nx-failover/bin/pg_standby
 #PG_STANDBY=/usr/local/nx-failover/lib/pg_standby-8.2.7_64

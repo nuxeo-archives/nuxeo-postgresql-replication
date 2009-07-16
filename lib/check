@@ -29,16 +29,29 @@ if [ -z "`id -Gn postgres|grep nuxeo`" ]; then
     error=1
     echo "### ERROR: postgres user is not part of nuxeo group"
 fi
-ssh -q -o "BatchMode=yes" $COMMON_USER@$SLAVE exit || \
-  (error=1 && echo "### ERROR: cannot connect on $SLAVE as $COMMON_USER")
-$SUPGROOT -c "ssh -q -o \"BatchMode=yes\" $COMMON_USER@$SLAVE exit" || \
-  (error=1 && echo "### ERROR: $PGROOT cannot connect on $SLAVE as $COMMON_USER")
-$SUPGROOT -c "ssh -q -o \"BatchMode=yes\" $PGROOT@$SLAVE exit" || \
-  (error=1 && echo "### ERROR: $PGROOT cannot connect on $SLAVE as $PGROOT")
-$SUNXUSER -c "touch $NXDATA/check.test" && \
-$SUPGROOT -c "cp $NXDATA/check.test $PGDATA_BASE/check.test" || \
-   (error=1 && echo "### ERROR: $PGROOT cannot copy files in $NXDATA created by $COMMON_USER")
-$SUNXUSER -c "rm $NXDATA/check.test" && $SUPGROOT -c "rm $PGDATA_BASE/check.test"
+ssh -q -o "BatchMode=yes" $COMMON_USER@$SLAVE exit
+if [ $? != 0 ]; then
+    error=1
+    echo "### ERROR: cannot connect on $SLAVE as $COMMON_USER"
+fi
+$SUPGROOT "ssh -q -o \"BatchMode=yes\" $COMMON_USER@$SLAVE exit"
+if [ $? != 0 ]; then
+    error=1
+    echo "### ERROR: $PGROOT cannot connect on $SLAVE as $COMMON_USER"
+fi
+$SUPGROOT "ssh -q -o \"BatchMode=yes\" $PGROOT@$SLAVE exit"
+if [ $? != 0 ]; then
+    error=1
+    echo "### ERROR: $PGROOT cannot connect on $SLAVE as $PGROOT"
+fi
+$SUNXUSER "touch $NXDATA/check.test" && \
+$SUPGROOT "cp $NXDATA/check.test $PGDATA_BASE/check.test"
+if [ $? != 0 ]; then
+    error=1
+    echo "### ERROR: $PGROOT cannot copy files in $NXDATA created by $COMMON_USER"
+fi
+$SUNXUSER "rm $NXDATA/check.test" && $SUPGROOT "rm $PGDATA_BASE/check.test"
+
 # TODO other points to check...
 
 if [ ! -z $error ]; then
