@@ -24,8 +24,20 @@ echo "### Checking if server is ready for Nuxeo replication..."
 if [ ! -d $PGDATA ]; then
     error=1
     echo "### ERROR: PostgreSQL DATA $PGDATA is not initialized"
-    exit 1
 fi
+if [ -z "`id -Gn postgres|grep nuxeo`" ]; then
+    error=1
+    echo "### ERROR: postgres user is not part of nuxeo group"
+fi
+ssh -q -o "BatchMode=yes" $COMMON_USER@$SLAVE exit || \
+  (error=1 && echo "### ERROR: cannot connect on $SLAVE as $COMMON_USER")
+$SUPGROOT -c "ssh -q -o \"BatchMode=yes\" $COMMON_USER@$SLAVE exit" || \
+  (error=1 && echo "### ERROR: cannot connect on $SLAVE as $COMMON_USER")
+$SUPGROOT -c "ssh -q -o \"BatchMode=yes\" $PGROOT@$SLAVE exit" || \
+  (error=1 && echo "### ERROR: cannot connect on $SLAVE as $PGROOT")
+
+# TODO other points to check...
+
 if [ ! -z $error ]; then
     echo "### ERROR: you need to fix the previous errors."
     exit 1

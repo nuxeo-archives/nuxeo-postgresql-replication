@@ -115,10 +115,8 @@ display_conf() {
     echo "    configuration file: $CONF_FILE"
     echo "    log file: $LOG_FILE"
     echo "    user: $COMMON_USER"
-    echo
     echo "    Nuxeo directory: $NX_HOME"
     echo "    Nuxeo data base directory: $NXDATA_BASE"
-    echo "    Nuxeo directories to synchronize: $NXDATA_TOSYNC"
     echo "    Nuxeo directories to synchronize: $NXDATA_TOSYNC"
     echo
     echo "    PostgreSQL database: $PG_DB"
@@ -128,9 +126,9 @@ display_conf() {
     echo "    pg_standby executable: $PG_STANDBY"
     echo "    archive mode: $PGARCHIVE_MODE"
     echo "    archive timeout: $PGARCHIVE_TIMEOUT"
-    echo
     echo "    Slave: $SLAVE"
-    echo "  Starting at: `date`"
+    echo
+    echo "### Starting at: `date`"
     echo
 }
 
@@ -139,12 +137,14 @@ display_conf() {
 # Target: setup
 #
 setup() {
+  # create directories
+  sudo mkdir -p -m770 $PGDATA_BASE $PGDATA_OUTGOING $PGDATA_INCOMING $NXDATA_BASE 
   # setup convenient symlinks
   sudo ln -s $PGDATA $PGDATA_BASE/data
   sudo ln -s $NX_HOME/server/default/data $NX_DATA
   # setup ownership
-  sudo chown -R postgres:postgres $PGDATA_BASE
-  sudo chown -R nuxeo:nuxeo $NXDATA_BASE
+  sudo chown -R $PGROOT:$PGROOT $PGDATA_BASE
+  sudo chown -R $COMMON_USER:$COMMON_USER $NXDATA_BASE
   
   check
 }
