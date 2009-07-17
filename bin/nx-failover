@@ -191,7 +191,7 @@ EOF
     cd `dirname $PGDATA`
     tar -cf $PGDATA_BASE/backup-$DATE.tar `basename $PGDATA`
     chmod g+rw $PGDATA_BASE/backup-$DATE.tar
-    chgrp $COMMON_GROUP $PGDATA_BASE/backup-$DATE.tar
+    chgrp $COMMON_USER $PGDATA_BASE/backup-$DATE.tar
 EOF
   $SUNXUSER sh <<EOF
     cd $NXDATA
@@ -227,11 +227,11 @@ restore() {
     cd `dirname $PGDATA`
     mv $PGDATA $PGDATA_BASE/`basename $PGDATA`.backup-$DATE
     chmod g+rw $BACKUP_FILE
-    tar zxvf $BACKUP_FILE `basename $PGDATA`
-    rm -r $PGDATA/pg_xlog/*
+    tar -xf $BACKUP_FILE `basename $PGDATA`
+    rm -f $PGDATA/pg_xlog/*
 #    mkdir $PGDATA/pg_xlog/archive_status/
     cd `dirname $PGDATA_OUTGOING`
-    rm $PGDATA_OUTGOING/*
+    rm -f $PGDATA_OUTGOING/*
     tar -xf $BACKUP_FILE `basename $PGDATA_OUTGOING`
     mv $PGDATA_OUTGOING/* $PGDATA_INCOMING/
 #    echo "## restoring" > $PGCONF/$PGRESTORE_CONF
@@ -254,7 +254,7 @@ EOF
 # Target: start-slave
 #
 start-slave() {
-  $PG_SERVICE stop ||Êtrue
+  $PG_SERVICE stop || true
   $SUPGROOT sh <<EOF
 #    [ -f /mnt/pgdata/data/recovery.conf.bak ] || cp /usr/share/pgsql/recovery.conf.sample $PGDATA/recovery.conf.bak
 #    if [ ! -e $WORK_DIR/$PGRESTORE_CONF.bak ]; then

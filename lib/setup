@@ -23,7 +23,10 @@
 sudo mkdir -p -m770 $PGDATA_BASE $PGDATA_OUTGOING $PGDATA_INCOMING $NXDATA_BASE 
 # setup convenient symlinks
 sudo ln -s $PGDATA $PGDATA_BASE/data
+[ ! -d $NX_HOME/server/default/data ] && mkdir $NX_HOME/server/default/data
+[ ! -d $NX_HOME/server/default/log ] && mkdir $NX_HOME/server/default/log
 sudo ln -s $NX_HOME/server/default/data $NXDATA
 # setup ownership
-sudo chown -R $PGROOT:$PGROOT $PGDATA_BASE
+chmod g+w .
+sudo chown -R $PGROOT:$COMMON_USER $PGDATA_BASE
 sudo chown -R $COMMON_USER:$COMMON_USER $NXDATA_BASE
