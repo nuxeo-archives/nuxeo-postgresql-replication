@@ -263,7 +263,7 @@ start-slave() {
 #      touch $WORK_DIR/$PGRESTORE_CONF.bak
 #    fi
     # stop archiving if it was a master server
-    cp -f $WORK_DIR/$PGARCHIVE_CONF.bak $PGCONF/$PGARCHIVE_CONF
+    cp -f $WORK_DIR/$PGARCHIVE_CONF.bak $PGCONF/$PGARCHIVE_CONF 2>/dev/null
 #    cp -f $WORK_DIR/$PGRESTORE_CONF.bak $PGCONF/$PGRESTORE_CONF
     echo "## restoring" > $PGCONF/$PGRESTORE_CONF
     echo "restore_command = '$PGRESTORE_COMMAND'" >> $PGCONF/$PGRESTORE_CONF
@@ -392,3 +392,4 @@ main() {
 main $@
 echo "### `basename $0`: task completed at `date`."
 
+## TODO CLEANUP
