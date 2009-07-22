@@ -9,7 +9,7 @@ PREFIX=/usr/local
 
 # END OF CONFIGURATION PART ------------------------------------
 
-VERSION=0.1.0
+VERSION=0.1.1
 NXR_HOME=$(PREFIX)/nx-failover
 
 clean:
@@ -34,9 +34,5 @@ uninstall:
 	rm -rf $(PREFIX)/bin/nx-failover
 
 pkg:
-	rm -rf /tmp/nx-failover
-	hg clone . /tmp/nx-failover || exit 3
-	rm -rf /tmp/nx-failover/.hg
-	(cd /tmp;tar czf nx-failover-$(VERSION).tgz nx-failover)
-	mv /tmp/nx-failover-$(VERSION).tgz .
+	hg archive -p nx-failover -t tgz nx-failover-$(VERSION).tgz
 
