@@ -66,6 +66,7 @@ handle_placeless_commands() {
 
         debug|-d|--debug)
             set -x; shift
+            DEBUG=true
             handle_placeless_commands $@
             ;;
 
@@ -98,7 +99,7 @@ handle_placeless_commands $@
   PGRESTORE_CONF=recovery.conf
   PGDATA_OUTGOING=$PGDATA_BASE/outgoing
   PGDATA_INCOMING=$PGDATA_BASE/incoming
-  PGARCHIVE_COMMAND="$NXR_HOME/bin/pg_commands/archive_command.sh $PGDATA $PGDATA_OUTGOING $PGDATA_INCOMING $NXDATA $NXDATA $NXDATA_TOSYNC $SLAVE $LOG_FILE %p %f $COMMON_USER"
+  PGARCHIVE_COMMAND="$NXR_HOME/bin/pg_commands/archive_command.sh $PGDATA $PGDATA_OUTGOING $PGDATA_INCOMING $NXDATA $NXDATA_TOSYNC $SLAVE $LOG_FILE %p %f $COMMON_USER"
   PGARCHIVE_COMMAND_HOT="$NXR_HOME/bin/pg_commands/archive_command_hot.sh $PGDATA_BASE $PGDATA $PGDATA_OUTGOING $LOG_FILE %p %f"
   PGRESTORE_COMMAND="$NXR_HOME/bin/pg_commands/restore_command.sh $PG_STANDBY $PGDATA_BASE $PGDATA $PGDATA_INCOMING $LOG_FILE %p %f %r"
   SUNXUSER="sudo su - $COMMON_USER -c"
@@ -147,6 +148,7 @@ setup() {
 start-master() {
   $PG_SERVICE stop || true
   $SUPGROOT sh <<EOF
+    [ "$DEBUG" == true ] && set -x
     # stop restoring if it was a slave server
     rm -f $PGDATA/$PGRESTORE_CONF 2>/dev/null
     if [ ! -e $WORK_DIR/$PGARCHIVE_CONF.bak ]; then
@@ -170,6 +172,7 @@ backup() {
   [ ! -z $PGDATA ] && [ ! -z $PGDATA_BASE ] && [ ! -z $NXDATA_BASE ] || exit 2
   $PG_SERVICE stop || true
   $SUPGROOT sh <<EOF
+    [ "$DEBUG" == true ] && set -x
     # stop restoring if it was a slave server
     rm -f $PGDATA/$PGRESTORE_CONF 2>/dev/null
     if [ ! -e $WORK_DIR/$PGARCHIVE_CONF.bak ]; then
@@ -185,6 +188,7 @@ EOF
   $PG_SERVICE start ||Êexit 1
   DATE=`date +%Y%m%d-%H%M`
   $SUPGROOT sh <<EOF
+    [ "$DEBUG" == true ] && set -x
     touch $PGDATA_BASE/backup_in_progress
 #    $PSQL -d$PGDB -c "SELECT pg_start_backup('backup-$DATE');"
     $PSQL -c "SELECT pg_start_backup('backup-$DATE');"
@@ -194,15 +198,17 @@ EOF
     chgrp $COMMON_USER $PGDATA_BASE/backup-$DATE.tar
 EOF
   $SUNXUSER sh <<EOF
+    [ "$DEBUG" == true ] && set -x
     cd $NXDATA
     tar -rf $PGDATA_BASE/backup-$DATE.tar $NXDATA_TOSYNC
 EOF
   $SUPGROOT sh <<EOF
+    [ "$DEBUG" == true ] && set -x
     $PSQL -c "SELECT pg_stop_backup();"
     sleep 20
     rm $PGDATA_BASE/backup_in_progress
     cd $PGDATA_BASE/
-    chmod g+rx -R $PGDATA_OUTGOING
+    chmod -R g+rx $PGDATA_OUTGOING
     tar -rf $PGDATA_BASE/backup-$DATE.tar `basename $PGDATA_OUTGOING`
     rm -f $PGDATA_OUTGOING/*
     echo "backup-$DATE.tar" > $PGDATA_BASE/lastbackup
@@ -221,6 +227,7 @@ restore() {
   DATE=`date +%Y%m%d-%H%M`
   BACKUP_FILE=$PGDATA_BASE/`cat $PGDATA_BASE/lastbackup`
   $SUPGROOT sh <<EOF
+    [ "$DEBUG" == true ] && set -x
     if [ ! -e $WORK_DIR/$PGARCHIVE_CONF.bak ]; then
       cp $PGCONF/$PGARCHIVE_CONF $WORK_DIR/$PGARCHIVE_CONF.bak
     fi
@@ -239,6 +246,7 @@ restore() {
 #    ln -sf $PGCONF/$PGRESTORE_CONF $PGDATA/
 EOF
   $SUNXUSER sh <<EOF
+    [ "$DEBUG" == true ] && set -x
     mkdir $NXDATA_BASE/`basename $NXDATA`.backup-$DATE
     cd $NXDATA
     mv $NXDATA_TOSYNC $NXDATA_BASE/`basename $NXDATA`.backup-$DATE/
@@ -256,6 +264,7 @@ EOF
 start-slave() {
   $PG_SERVICE stop || true
   $SUPGROOT sh <<EOF
+    [ "$DEBUG" == true ] && set -x
 #    [ -f /mnt/pgdata/data/recovery.conf.bak ] || cp /usr/share/pgsql/recovery.conf.sample $PGDATA/recovery.conf.bak
 #    if [ ! -e $WORK_DIR/$PGRESTORE_CONF.bak ]; then
 #      echo $WORK_DIR/$PGRESTORE_CONF.bak missing ! Should copy it from a sample one: `locate recovery.conf`
@@ -276,8 +285,9 @@ EOF
 # Target: start-alone
 #
 start-alone() {
-  $PG_SERVICE stop ||Êtrue
+  $PG_SERVICE stop || true
   $SUPGROOT sh <<EOF
+    [ "$DEBUG" == true ] && set -x
     # stop archiving/restoring if it was a master/slave server
     cp -f $WORK_DIR/$PGARCHIVE_CONF.bak $PGCONF/$PGARCHIVE_CONF
     rm -f $PGDATA/$PGRESTORE_CONF 2>/dev/null
@@ -294,7 +304,11 @@ switch-to-master() {
   sleep 20
   $PG_SERVICE stop
   # stop restoring
-  $SUPGROOT "cp `cat $PGDATA_BASE/lastrestored` $PGDATA/pg_xlog/"
+  sudo chmod g+r $PGDATA_BASE/lastrestored
+  $SUPGROOT sh <<EOF
+    [ "$DEBUG" == true ] && set -x
+    cp `cat $PGDATA_BASE/lastrestored` $PGDATA/pg_xlog/
+EOF
   start-alone
   # remove lock imported from running ex-primary
   $SUNXUSER "rm -f $NXDATA/NXRuntime/repos/default/.lock 2>/dev/null"
@@ -318,10 +332,11 @@ check() {
 }
 
 # ==================================================
-# Target: backup-standby
+# Target: backup-slave
 #
-backup-standby() {
+backup-slave() {
   $SUPGROOT sh <<EOF
+    [ "$DEBUG" == true ] && set -x
     echo "Waiting for the last uploaded file to be fully restored..."
     mkdir $PGDATA_BASE/restored/ 2>/dev/null
     while true; do
@@ -366,8 +381,8 @@ main() {
         backup)
             backup
             ;;
-        backup-standby)
-            backup-standby
+        backup-slave)
+            backup-slave
             ;;
         restore)
             restore

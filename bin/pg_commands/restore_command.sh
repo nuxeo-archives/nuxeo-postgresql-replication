@@ -31,3 +31,4 @@ echo "$PGDATA_INCOMING/$F" > $PGDATA_BASE/nexttorestore
 #$PG_STANDBY -l -d -s 60 -t /tmp/pgsql.trigger.5442 $PGDATA_INCOMING $F $PGDATA/$P $R 2>>$LOG_FILE 2>&1
 $PG_STANDBY -l -d -s 60 -t /tmp/pgsql.trigger.5442 $PGDATA_INCOMING $F $P $R >>$LOG_FILE 2>&1
 echo "$PGDATA_BASE/incoming/$F" > $PGDATA_BASE/lastrestored
+chmod g+r $PGDATA_BASE/nexttorestore $PGDATA_BASE/lastrestored
