@@ -25,9 +25,9 @@ if [ ! -d $PGDATA ]; then
     error=1
     echo "### ERROR: PostgreSQL DATA $PGDATA is not initialized"
 fi
-if [ -z "`id -Gn postgres|grep nuxeo`" ]; then
+if [ -z "`id -Gn postgres|grep $COMMON_USER`" ]; then
     error=1
-    echo "### ERROR: postgres user is not part of nuxeo group"
+    echo "### ERROR: postgres user is not part of $COMMON_USER group"
 fi
 ssh -q -o "BatchMode=yes" $COMMON_USER@$SLAVE exit
 if [ $? != 0 ]; then

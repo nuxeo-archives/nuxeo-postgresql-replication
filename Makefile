@@ -9,7 +9,7 @@ PREFIX=/usr/local
 
 # END OF CONFIGURATION PART ------------------------------------
 
-VERSION=0.1.1
+VERSION=0.1.1-testmonoserver
 NXR_HOME=$(PREFIX)/nx-failover
 
 clean:

@@ -1,3 +1,7 @@
+Version 0.1.1-testmonoserver
+---------------
+* allow to test on monoserver, separating slave and master directories
+
 Version 0.1.1
 ---------------
 * use hg archive command in Makefile

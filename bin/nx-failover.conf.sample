@@ -4,6 +4,7 @@ COMMON_USER='nuxeo'
 NX_HOME=/opt/nuxeo
 NX_SERVICE="sudo /etc/init.d/nuxeo"
 NXDATA_BASE=/mnt/nxdata
+NXDATA_BASE_SLAVE=/mnt/nxdata
 NXDATA_TOSYNC="NXRuntime"
 
 PGROOT='postgres'
@@ -13,6 +14,7 @@ PG_DB=cws
 PGDATA=/var/lib/postgresql/8.3/main
 PGCONF=/etc/postgresql/8.3/main/
 PGDATA_BASE=/mnt/pgdata
+PGDATA_BASE_SLAVE=/mnt/pgdata
 
 LOG_FILE=$PGDATA_BASE/nx-failover.log
 
