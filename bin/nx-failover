@@ -146,6 +146,7 @@ setup() {
 # Target: start-master
 #
 start-master() {
+  $NX_SERVICE stop || true
   $PG_SERVICE stop || true
   $SUPGROOT sh <<EOF
     [ "$DEBUG" == true ] && set -x
@@ -162,6 +163,7 @@ start-master() {
     echo $PGARCHIVE_TIMEOUT >> $PGCONF/$PGARCHIVE_CONF
 EOF
   $PG_SERVICE start ||Êexit 1
+  $NX_SERVICE start
   
 }
 
@@ -170,6 +172,7 @@ EOF
 #
 backup() {
   [ ! -z $PGDATA ] && [ ! -z $PGDATA_BASE ] && [ ! -z $NXDATA_BASE ] || exit 2
+  $NX_SERVICE stop || true
   $PG_SERVICE stop || true
   $SUPGROOT sh <<EOF
     [ "$DEBUG" == true ] && set -x
@@ -223,6 +226,7 @@ EOF
 #
 restore() {
   [ ! -z $PGDATA ] && [ ! -z $PGDATA_BASE ] && [ ! -z $NXDATA_BASE ] || exit 2
+  $NX_SERVICE stop || true
   $PG_SERVICE stop || true
   DATE=`date +%Y%m%d-%H%M`
   BACKUP_FILE=$PGDATA_BASE/`cat $PGDATA_BASE/lastbackup`
@@ -262,6 +266,7 @@ EOF
 # Target: start-slave
 #
 start-slave() {
+  $NX_SERVICE stop || true
   $PG_SERVICE stop || true
   $SUPGROOT sh <<EOF
     [ "$DEBUG" == true ] && set -x
@@ -285,6 +290,7 @@ EOF
 # Target: start-alone
 #
 start-alone() {
+  $NX_SERVICE stop || true
   $PG_SERVICE stop || true
   $SUPGROOT sh <<EOF
     [ "$DEBUG" == true ] && set -x
@@ -294,12 +300,16 @@ start-alone() {
     rm -f /tmp/pgsql.trigger.5442
 EOF
   $PG_SERVICE start
+  # remove lock imported from running ex-primary
+  $SUNXUSER "rm -f $NXDATA/NXRuntime/repos/default/.lock 2>/dev/null"
+  $NX_SERVICE start || exit 1
 }
 
 # ==================================================
 # Target: switch-to-master
 #
 switch-to-master() {
+  $NX_SERVICE stop || true
   $SUPGROOT "touch /tmp/pgsql.trigger.5442"
   sleep 20
   $PG_SERVICE stop
@@ -310,8 +320,6 @@ switch-to-master() {
     cp `cat $PGDATA_BASE/lastrestored` $PGDATA/pg_xlog/
 EOF
   start-alone
-  # remove lock imported from running ex-primary
-  $SUNXUSER "rm -f $NXDATA/NXRuntime/repos/default/.lock 2>/dev/null"
   echo "### INFO: run 'nx-failover start-master' when a slave is ready" 
 }
 
