@@ -306,6 +306,7 @@ switch-to-master() {
   sleep 20
   $PG_SERVICE stop
   # stop restoring
+  sudo chmod g+r $PGDATA_BASE/lastrestored
   $SUPGROOT sh <<EOF
     [ "$DEBUG" == true ] && set -x
     cp `cat $PGDATA_BASE/lastrestored` $PGDATA/pg_xlog/
