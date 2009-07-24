@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 PREFIX=$1
 shift
@@ -9,7 +9,7 @@ shift
 
 NX_FAILOVER=$PREFIX/bin/nx-failover
 cat > $NX_FAILOVER  <<EOF
-#!/bin/sh
+#!/bin/bash
 # nx-failover $VERSION
 NXR_HOME=$NXR_HOME
 VERSION=$VERSION
