@@ -245,7 +245,7 @@ restore() {
     cd `dirname $PGDATA_OUTGOING`
     rm -f $PGDATA_OUTGOING/* $PGDATA_INCOMING/*
     tar -xf $BACKUP_FILE `basename $PGDATA_OUTGOING`
-    cp $PGDATA_INCOMING/* $PGDATA/pg_xlog/
+    cp $PGDATA_OUTGOING/* $PGDATA/pg_xlog/
     mv $PGDATA_OUTGOING/* $PGDATA_INCOMING/
 #    echo "## restoring" > $PGCONF/$PGRESTORE_CONF
 #    echo "restore_command = '$PGRESTORE_COMMAND'" >> $PGCONF/$PGRESTORE_CONF
