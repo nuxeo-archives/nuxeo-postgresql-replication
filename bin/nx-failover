@@ -369,6 +369,13 @@ EOF
 }
 
 # ==================================================
+# Target: cleanup-slave
+#
+cleanup-slave() {
+  . $NXR_HOME/lib/cleanup-slave  || exit 1
+}
+
+# ==================================================
 # main
 #
 main() {
@@ -407,6 +414,9 @@ main() {
             set -x; shift
             main $@
             ;;
+        cleanup-slave)
+            cleanup-slave
+            ;;
         *)
             echo "### ERROR: invalid options, try '`basename $0` help'."
             exit 1
@@ -416,5 +426,3 @@ main() {
 
 main $@
 echo "### `basename $0`: task completed at `date`."
-
-## TODO CLEANUP

@@ -120,3 +120,6 @@ switch-to-master
 
 switch-to-slave
 
+cleanup-slave
+    Remove backup and temporary files on slave side. Those files are useless since "nx-failover restore" 
+    has succeeded.
