@@ -163,7 +163,7 @@ start-master() {
     echo "archive_command = '$PGARCHIVE_COMMAND'" >> $PGCONF/$PGARCHIVE_CONF
     echo $PGARCHIVE_TIMEOUT >> $PGCONF/$PGARCHIVE_CONF
 EOF
-  $PG_SERVICE start ||Êexit 1
+  $PG_SERVICE start || exit 1
   $NX_SERVICE start
   
 }
@@ -189,7 +189,7 @@ backup() {
     echo "archive_command = '$PGARCHIVE_COMMAND_HOT'" >> $PGCONF/$PGARCHIVE_CONF
     echo $PGARCHIVE_TIMEOUT >> $PGCONF/$PGARCHIVE_CONF
 EOF
-  $PG_SERVICE start ||Êexit 1
+  $PG_SERVICE start || exit 1
   DATE=`date +%Y%m%d-%H%M`
   $SUPGROOT $SH <<EOF
     [ "$DEBUG" == true ] && set -x
@@ -255,7 +255,7 @@ EOF
     [ "$DEBUG" == true ] && set -x
     mkdir $NXDATA_BASE/`basename $NXDATA`.backup-$DATE
     cd $NXDATA
-    mv $NXDATA_TOSYNC $NXDATA_BASE/`basename $NXDATA`.backup-$DATE/
+    mv $NXDATA_TOSYNC $NXDATA_BASE/`basename $NXDATA`.backup-$DATE/ ||Êtrue
     tar -xf $BACKUP_FILE $NXDATA_TOSYNC
 # not needed because database is on localhost
 #    cp $NXDATA_BASE/default.xml $NXDATA_BASE/data/NXRuntime/repos/default/
@@ -274,7 +274,7 @@ start-slave() {
     [ "$DEBUG" == true ] && set -x
 #    [ -f /mnt/pgdata/data/recovery.conf.bak ] || cp /usr/share/pgsql/recovery.conf.sample $PGDATA/recovery.conf.bak
 #    if [ ! -e $WORK_DIR/$PGRESTORE_CONF.bak ]; then
-#      echo $WORK_DIR/$PGRESTORE_CONF.bak missing ! Should copy it from a sample one: `locate recovery.conf`
+#      echo $WORK_DIR/$PGRESTORE_CONF.bak missing ! Should copy it from a sample one: \`locate recovery.conf\`
 #      echo "Creating an empty one."
 #      touch $WORK_DIR/$PGRESTORE_CONF.bak
 #    fi
@@ -319,7 +319,7 @@ switch-to-master() {
   sudo chmod g+r $PGDATA_BASE/lastrestored
   $SUPGROOT $SH <<EOF
     [ "$DEBUG" == true ] && set -x
-    cp `cat $PGDATA_BASE/lastrestored` $PGDATA/pg_xlog/
+    cp \`cat $PGDATA_BASE/lastrestored\` $PGDATA/pg_xlog/
 EOF
   start-alone
   echo "### INFO: run 'nx-failover start-master' when a slave is ready" 
@@ -350,19 +350,19 @@ backup-slave() {
     echo "Waiting for the last uploaded file to be fully restored..."
     mkdir $PGDATA_BASE/restored/ 2>/dev/null
     while true; do
-      if [ ! -f `cat $PGDATA_BASE/nexttorestore` ]; then
+      if [ ! -f \`cat $PGDATA_BASE/nexttorestore\` ]; then
         ( cd $PGDATA_INCOMING/
           mv * $PGDATA_BASE/restored/
           cd $PGDATA_BASE/restored/
           export DATE=`date +%Y%m%d-%H%M`
-          LASTRESTORED=`cat $PGDATA_BASE/lastrestored| basename`
+          LASTRESTORED=\`cat $PGDATA_BASE/lastrestored| basename\`
           tar --remove-files -zcvf $PGDATA_BASE/restored-$DATE-$LASTRESTORED.tgz *
           echo "Backuped and removed files until including $LASTRESTORED into $PGDATA_BASE/restored-$DATE-$LASTRESTORED.tgz"
-          echo "Store with `cat $PGDATA_BASE/lastbackup` to have consistent data."
+          echo "Store with \`cat $PGDATA_BASE/lastbackup\` to have consistent data."
           return 0
         )
       fi
-      echo "Restoring `cat $PGDATA_BASE/nexttorestore` in progress, waiting..."
+      echo "Restoring \`cat $PGDATA_BASE/nexttorestore\` in progress, waiting..."
       sleep 10 || return 1 # Ctrl-C interrupt
     done
 EOF
