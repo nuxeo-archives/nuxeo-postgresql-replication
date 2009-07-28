@@ -376,6 +376,13 @@ cleanup-slave() {
 }
 
 # ==================================================
+# Target: cleanup-master
+#
+cleanup-master() {
+  . $NXR_HOME/lib/cleanup-master  || exit 1
+}
+
+# ==================================================
 # main
 #
 main() {
@@ -416,6 +423,9 @@ main() {
             ;;
         cleanup-slave)
             cleanup-slave
+            ;;
+        cleanup-master)
+            cleanup-master
             ;;
         *)
             echo "### ERROR: invalid options, try '`basename $0` help'."

@@ -4,6 +4,7 @@ Version 0.1.2
 * ownership fix on $PGDATA_BASE/lastrestored
 * replaced "sh" with "$SH" to avoid incompatible shell being ran
 * added nuxeo server management
+* added cleanup functions for slave and master
 
 Version 0.1.1
 ---------------

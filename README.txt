@@ -104,22 +104,28 @@ start-slave
 
 
 start-alone
-
+    Stop replication and start as standard mono server.
 
 backup
-
+    Master proceed to a full backup, send it to its slave and then regularly send its logs.
 
 backup-standby
 
 
 restore
-
+    Slave proceed to full restore from last received backup and then regularly look for incoming
+    logs and replay them.
 
 switch-to-master
-
+    Tell slave server to achieve any current replication and then become a master. 
 
 switch-to-slave
+    Tell master server to become a slave. Usually called after it has been repaired.
 
 cleanup-slave
     Remove backup and temporary files on slave side. Those files are useless since "nx-failover restore" 
+    has succeeded.
+
+cleanup-master
+    Remove backup and temporary files on master side. Those files are useless since "nx-failover backup" 
     has succeeded.
