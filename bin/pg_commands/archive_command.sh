@@ -28,7 +28,8 @@ SLAVE=$6
 LOG_FILE=$7
 P=$8
 F=$9
-COMMON_USER=$10
+shift;
+COMMON_USER=$9
 
 if [ -f $PGDATA_OUTGOING/$F ]; then
   echo "### ERROR: $PGDATA_OUTGOING/$F already exists ! Exiting archive command" >&2

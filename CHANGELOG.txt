@@ -1,6 +1,10 @@
-Version 0.1.3
+Version 0.1.4
 ---------------
 * TODO
+
+Version 0.1.3
+---------------
+* use shift in archive_command.sh to avoid managing more than nine parameters 
 
 Version 0.1.2
 ---------------
