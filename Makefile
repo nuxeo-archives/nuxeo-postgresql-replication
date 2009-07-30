@@ -9,7 +9,7 @@ PREFIX=/usr/local
 
 # END OF CONFIGURATION PART ------------------------------------
 
-VERSION=0.1.4-SNAPSHOT
+VERSION=0.1.3
 NXR_HOME=$(PREFIX)/nx-failover
 
 clean:
