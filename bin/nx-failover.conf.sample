@@ -23,4 +23,4 @@ PGARCHIVE_MODE="archive_mode = on"
 #PGARCHIVE_MODE=""
 PGARCHIVE_TIMEOUT="archive_timeout = 600"
 
-SLAVE=slaveserver
+SLAVES=slaveserver1 slaveserver2

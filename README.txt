@@ -36,7 +36,7 @@ nx-failover will help you manage Nuxeo products replication over PostgreSQL.
 
 Available functionalities:
 * Prepare a Nuxeo server to be replicated/replicate.
-* Start a server as primary server (master) sending WAL files to its slave.  
+* Start a server as primary server (master) sending WAL files to its slave(s).  
 * Start a server as standby server (slave) replaying logs received from its master.
 * Switch server role from slave to master, and reciprocally.
 * ...

@@ -29,21 +29,23 @@ if [ -z "`id -Gn postgres|grep $COMMON_USER`" ]; then
     error=1
     echo "### ERROR: postgres user is not part of $COMMON_USER group"
 fi
-ssh -q -o "BatchMode=yes" $COMMON_USER@$SLAVE exit
-if [ $? != 0 ]; then
-    error=1
-    echo "### ERROR: cannot connect on $SLAVE as $COMMON_USER"
-fi
-$SUPGROOT "ssh -q -o \"BatchMode=yes\" $COMMON_USER@$SLAVE exit"
-if [ $? != 0 ]; then
-    error=1
-    echo "### ERROR: $PGROOT cannot connect on $SLAVE as $COMMON_USER"
-fi
-$SUPGROOT "ssh -q -o \"BatchMode=yes\" $PGROOT@$SLAVE exit"
-if [ $? != 0 ]; then
-    error=1
-    echo "### ERROR: $PGROOT cannot connect on $SLAVE as $PGROOT"
-fi
+for slave in $SLAVES; do
+  ssh -q -o "BatchMode=yes" $COMMON_USER@$slave exit
+  if [ $? != 0 ]; then
+      error=1
+      echo "### ERROR: cannot connect on $slave as $COMMON_USER"
+  fi
+  $SUPGROOT "ssh -q -o \"BatchMode=yes\" $COMMON_USER@$slave exit"
+  if [ $? != 0 ]; then
+      error=1
+      echo "### ERROR: $PGROOT cannot connect on $slave as $COMMON_USER"
+  fi
+  $SUPGROOT "ssh -q -o \"BatchMode=yes\" $PGROOT@$slave exit"
+  if [ $? != 0 ]; then
+      error=1
+      echo "### ERROR: $PGROOT cannot connect on $slave as $PGROOT"
+  fi
+done
 $SUNXUSER "touch $NXDATA/check.test" && \
 $SUPGROOT "cp $NXDATA/check.test $PGDATA_BASE/check.test"
 if [ $? != 0 ]; then

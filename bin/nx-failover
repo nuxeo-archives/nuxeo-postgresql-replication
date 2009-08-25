@@ -100,7 +100,7 @@ handle_placeless_commands $@
   PGRESTORE_CONF=recovery.conf
   PGDATA_OUTGOING=$PGDATA_BASE/outgoing
   PGDATA_INCOMING=$PGDATA_BASE/incoming
-  PGARCHIVE_COMMAND="$NXR_HOME/bin/pg_commands/archive_command.sh $PGDATA $PGDATA_OUTGOING $PGDATA_INCOMING $NXDATA $NXDATA_TOSYNC $SLAVE $LOG_FILE %p %f $COMMON_USER"
+  PGARCHIVE_COMMAND="$NXR_HOME/bin/pg_commands/archive_command.sh $PGDATA $PGDATA_OUTGOING $PGDATA_INCOMING $NXDATA '$NXDATA_TOSYNC' '$SLAVES' $LOG_FILE %p %f $COMMON_USER"
   PGARCHIVE_COMMAND_HOT="$NXR_HOME/bin/pg_commands/archive_command_hot.sh $PGDATA_BASE $PGDATA $PGDATA_OUTGOING $LOG_FILE %p %f"
   PGRESTORE_COMMAND="$NXR_HOME/bin/pg_commands/restore_command.sh $PG_STANDBY $PGDATA_BASE $PGDATA $PGDATA_INCOMING $LOG_FILE %p %f %r"
   SUNXUSER="sudo su - $COMMON_USER -c"
@@ -128,7 +128,7 @@ display_conf() {
     echo "    pg_standby executable: $PG_STANDBY"
     echo "    archive mode: $PGARCHIVE_MODE"
     echo "    archive timeout: $PGARCHIVE_TIMEOUT"
-    echo "    Slave: $SLAVE"
+    echo "    Slaves: $SLAVES"
     echo
     echo "### Starting at: `date`"
     echo
@@ -217,8 +217,8 @@ EOF
     rm -f $PGDATA_OUTGOING/*
     echo "backup-$DATE.tar" > $PGDATA_BASE/lastbackup
 EOF
-    $SUPGROOT "scp -C $PGDATA_BASE/lastbackup $PGDATA_BASE/backup-$DATE.tar $SLAVE:$PGDATA_BASE/"
-    echo "### INFO: run 'nx-failover restore' on slave" 
+    $SUPGROOT "for slave in $SLAVES; do scp -C $PGDATA_BASE/lastbackup $PGDATA_BASE/backup-$DATE.tar $slave:$PGDATA_BASE/ ; done"
+    echo "### INFO: run 'nx-failover restore' on slaves $SLAVES" 
     start-master
 }
 
