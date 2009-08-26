@@ -2,6 +2,10 @@ Version 0.1.5
 ---------------
 * TODO
 
+Version 0.1.4.1
+---------------
+* manage with separate servers for each Nuxeo server and its corresponding database
+
 Version 0.1.4
 ---------------
 * manage with multiple slaves

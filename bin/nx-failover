@@ -93,19 +93,19 @@ handle_placeless_commands $@
   fi
   source $CONF_FILE
   WORK_DIR=$(pwd -P)
-  SH=/bin/bash
-  NXDATA=$NXDATA_BASE/data
-  NXDATA_DIRS="data tmp log work"
+  SH=${SH:-/bin/bash}
+  SUNXUSER=${SUNXUSER:-"sudo su - $COMMON_USER -c"}
+  SUPGUSER=${SUPGUSER:-"sudo su - $COMMON_USER -c"}
+  SUPGROOT=${SUPGROOT:-"sudo su - $PGROOT -c"}
+  NXDATA=${NXDATA:-$NXDATA_BASE/data}
+  NXDATA_DIRS=${NXDATA_DIRS:-"data tmp log work"}
   PGARCHIVE_CONF=postgresql.conf
   PGRESTORE_CONF=recovery.conf
-  PGDATA_OUTGOING=$PGDATA_BASE/outgoing
-  PGDATA_INCOMING=$PGDATA_BASE/incoming
-  PGARCHIVE_COMMAND="$NXR_HOME/bin/pg_commands/archive_command.sh $PGDATA $PGDATA_OUTGOING $PGDATA_INCOMING $NXDATA '$NXDATA_TOSYNC' '$SLAVES' $LOG_FILE %p %f $COMMON_USER"
+  PGDATA_OUTGOING=${PGDATA_OUTGOING:-$PGDATA_BASE/outgoing}
+  PGDATA_INCOMING=${PGDATA_INCOMING:-$PGDATA_BASE/incoming}
+  PGARCHIVE_COMMAND="$NXR_HOME/bin/pg_commands/archive_command.sh $PGDATA $PGDATA_OUTGOING $PGDATA_INCOMING $NXDATA '$NXDATA_TOSYNC' '$SLAVES' $NX_MASTER '$NX_SLAVES' $SH $LOG_FILE %p %f $COMMON_USER"
   PGARCHIVE_COMMAND_HOT="$NXR_HOME/bin/pg_commands/archive_command_hot.sh $PGDATA_BASE $PGDATA $PGDATA_OUTGOING $LOG_FILE %p %f"
   PGRESTORE_COMMAND="$NXR_HOME/bin/pg_commands/restore_command.sh $PG_STANDBY $PGDATA_BASE $PGDATA $PGDATA_INCOMING $LOG_FILE %p %f %r"
-  SUNXUSER="sudo su - $COMMON_USER -c"
-  SUPGUSER="sudo su - $COMMON_USER -c"
-  SUPGROOT="sudo su - $PGROOT -c"
 
 # ==================================================
 # Utils
@@ -204,7 +204,7 @@ EOF
   $SUNXUSER $SH <<EOF
     [ "$DEBUG" == true ] && set -x
     cd $NXDATA
-    tar -rf $PGDATA_BASE/backup-$DATE.tar $NXDATA_TOSYNC
+    tar -cf $NXDATA_BASE/backup-$DATE.tar $NXDATA_TOSYNC
 EOF
   $SUPGROOT $SH <<EOF
     [ "$DEBUG" == true ] && set -x
@@ -216,10 +216,14 @@ EOF
     tar -rf $PGDATA_BASE/backup-$DATE.tar `basename $PGDATA_OUTGOING`
     rm -f $PGDATA_OUTGOING/*
     echo "backup-$DATE.tar" > $PGDATA_BASE/lastbackup
+    scp $PGDATA_BASE/lastbackup $COMMON_USER@$NX_MASTER:$NXDATA_BASE/
 EOF
-    $SUPGROOT "for slave in $SLAVES; do scp -C $PGDATA_BASE/lastbackup $PGDATA_BASE/backup-$DATE.tar $slave:$PGDATA_BASE/ ; done"
-    echo "### INFO: run 'nx-failover restore' on slaves $SLAVES" 
-    start-master
+  $SUPGROOT "for slave in $SLAVES; do scp -C $PGDATA_BASE/lastbackup $PGDATA_BASE/backup-$DATE.tar $slave:$PGDATA_BASE/ ; done"
+  $SUNXUSER $SH <<EOF
+    for slave in $NX_SLAVES; do scp -C $NXDATA_BASE/lastbackup $NXDATA_BASE/backup-$DATE.tar $slave:$NXDATA_BASE/ ; done
+EOF
+  echo "### INFO: run 'nx-failover restore' on slaves $SLAVES"
+  start-master
 }
 
 # ==================================================
@@ -256,8 +260,8 @@ EOF
     mkdir $NXDATA_BASE/`basename $NXDATA`.backup-$DATE
     cd $NXDATA
     mv $NXDATA_TOSYNC $NXDATA_BASE/`basename $NXDATA`.backup-$DATE/ ||Êtrue
-    tar -xf $BACKUP_FILE $NXDATA_TOSYNC
-# not needed because database is on localhost
+    tar -xf $NXDATA_BASE/`basename $BACKUP_FILE` $NXDATA_TOSYNC
+# not needed with VCS (required with JCR when database is not on localhost)
 #    cp $NXDATA_BASE/default.xml $NXDATA_BASE/data/NXRuntime/repos/default/
 EOF
   $PG_SERVICE start
@@ -303,7 +307,9 @@ start-alone() {
 EOF
   $PG_SERVICE start
   # remove lock imported from running ex-primary
-  $SUNXUSER "rm -f $NXDATA/NXRuntime/repos/default/.lock 2>/dev/null"
+  $SUNXUSER $SH <<EOF
+    rm -f $NXDATA/NXRuntime/repos/default/.lock 2>/dev/null
+EOF
   $NX_SERVICE start || exit 1
 }
 

@@ -47,7 +47,7 @@ for slave in $SLAVES; do
   fi
 done
 $SUNXUSER "touch $NXDATA/check.test" && \
-$SUPGROOT "cp $NXDATA/check.test $PGDATA_BASE/check.test"
+$SUPGROOT "scp $COMMON_USER@$NX_MASTER:$NXDATA/check.test $PGDATA_BASE/check.test"
 if [ $? != 0 ]; then
     error=1
     echo "### ERROR: $PGROOT cannot copy files in $NXDATA created by $COMMON_USER"
