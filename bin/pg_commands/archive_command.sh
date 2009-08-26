@@ -25,10 +25,13 @@ PGDATA_INCOMING=$3
 NXDATA=$4
 NXDATA_TOSYNC=$5
 SLAVES=$6
-LOG_FILE=$7
-P=$8
-F=$9
-shift;
+NX_MASTER=$7
+NX_SLAVES=$8
+SH=$9
+shift 4;
+LOG_FILE=$6
+P=$7
+F=$8
 COMMON_USER=$9
 
 error=0
@@ -41,10 +44,16 @@ for slave in $SLAVES; do
   scp -C $PGDATA_OUTGOING/$F $slave:$PGDATA_INCOMING/$F >>$LOG_FILE 2>&1 && rm $PGDATA_OUTGOING/$F || error=1
   # could use clearxlogtail to decrease data size (http://pgfoundry.org/projects/clearxlogtail/)
   # ...
-  
-  # need to sync jboss data
-  cd $NXDATA
-  rsync -z -e ssh -r --delete --progress $NXDATA_TOSYNC $COMMON_USER@$slave:$NXDATA/ || error=1
-  echo `date`: synchronization done. >>$LOG_FILE
 done
+
+# need to sync jboss data
+for nx_slave in $NX_SLAVES; do
+  ssh $COMMON_USER@$NX_MASTER $SH <<EOF
+    cd $NXDATA
+    rsync -z -e ssh -r --delete --progress $NXDATA_TOSYNC $COMMON_USER@$nx_slave:$NXDATA/
+EOF
+  [ $? != 0 ] && error=1
+done
+
+echo `date`: synchronization done. >>$LOG_FILE
 exit $error

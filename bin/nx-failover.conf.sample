@@ -6,6 +6,12 @@ NX_SERVICE="sudo /etc/init.d/nuxeo"
 NXDATA_BASE=/mnt/nxdata
 NXDATA_TOSYNC="NXRuntime"
 
+# set to corresponding Nuxeo server in case it would become the master, else set to localhost
+NX_MASTER=masternuxeo
+# remote Nuxeo servers
+NX_SLAVES=slavenuxeo1 slavenuxeo2
+SUNXUSER="ssh $COMMON_USER@$NX_MASTER"
+
 PGROOT='postgres'
 PG_SERVICE="sudo /etc/init.d/postgresql"
 PSQL=psql
